@@ -6,25 +6,35 @@ from tensorflow.keras import models
 MODEL_PATH = "tf-cnn-model.h5"
 
 def predict_digit(image_path):
-    
-    # load model
-    model = models.load_model(MODEL_PATH)
+    # Load model (ignore training config)
+    model = models.load_model(MODEL_PATH, compile=False)
     print("[INFO] Loaded model from disk.")
 
-    image = cv2.imread(image_path, 0)      
-    image1 = cv2.resize(image, (28,28))    # For cv2.imshow: dimensions should be 28x28
-    image2 = image1.reshape(1,28,28,1)
+    # Read and preprocess the image
+    image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+    if image is None:
+        print("[ERROR]: Invalid image path.")
+        return None
 
-    cv2.imshow('digit', image1 )
-    pred = np.argmax(model.predict(image2), axis=-1)
-    return pred[0]    
+    image_resized = cv2.resize(image, (28, 28))
+    image_input = image_resized.reshape(1, 28, 28, 1) / 255.0  # normalize
+
+    # Display image
+    cv2.imshow('Digit', image_resized)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+    # Predict
+    pred = np.argmax(model.predict(image_input), axis=-1)
+    return pred[0]
 
 def main(image_path):
     predicted_digit = predict_digit(image_path)
-    print('Predicted Digit: {}'.format(predicted_digit))
- 
+    if predicted_digit is not None:
+        print('Predicted Digit: {}'.format(predicted_digit))
+
 if __name__ == "__main__":
-    try:
-        main(image_path = sys.argv[1])
-    except:
-        print('[ERROR]: Image not found')
+    if len(sys.argv) < 2:
+        print("Usage: python load_model.py <image_path>")
+    else:
+        main(sys.argv[1])
